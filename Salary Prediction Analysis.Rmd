@@ -1,0 +1,153 @@
+---
+title: "Salary Prediction Analysis"
+author: "Venkata Rao Guduru"
+date: "06/29/2022"
+output: 
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(knitr)
+library(formattable)
+library(ggplot2)
+library(tidyr)
+library(ggplot2)
+library(ggthemes)
+library(caTools)
+```
+
+## Summary
+The paper will discuss the implementation of a logistic regression model that is essential in predicting employees' salaries after a certain period. In addition, this paper has identified the various factors that help determine salary growth after a set period. With the project, students are provided with assistance related to the salary they may expect when they complete their studies. The project also provides insights into the talents they need to achieve to ensure they can achieve their professional goals. Insights into the association between family background and salary have also been provided in this project. For the salary analysis and prediction, the project has involved several stages. The first stage includes downloading data from the UCI machine learning website, which has been imported into the R environment. The second stage includes data processing and cleaning. The third stage includes performing exploratory data analysis and visualization. The fourth stage includes building the logistic model, and the last stage involves predicting and identifying the factors considered for salary allocation. The results of this project answer the research question, does salary allocation depend on years of experience or the talent of individuals. It is concluded that salary is more dependent on the type of employer.
+
+
+## Introduction
+
+Data mining has become one of the most popular trends recently, especially in identifying patterns and knowledge from data. This paper implements the data mining techniques to identify patterns and insights regarding salary allocation and make predictions from the identified patterns by developing a logistic regression model. This project intends to provide students with knowledge concerning different courses depending on salary allocation as predicted. The logistic regression model has been created in this project for predictions. This paper is divided into the literature review, theory, data, methodology, results, implications, and conclusion sections. 
+
+
+## Literature Review
+
+In a study by Pawha & Kamthania (2019), the authors proposed a salary prediction system that college students could use to enhance the student's motivation. Through the use of the Decision Tree technique, these authors were able to generate a seven-feature prediction model. In another study, Bhuller et al. (2017) implemented an ordinary least squares regression model to predict the salaries of students based on family background and profiles. In another study by Shwartz et al.(2016), the authors created a hierarchical linear regression model where the salary was used as the output variable and profile as a fixed parameter. However, in their system, two problems were identified. The first problem is one needed a lot of statistical knowledge to understand the predictions, and the second problem is that the system was only personalized only for use for the students group. Therefore, with these problems, this project has implemented a dynamic prediction model that can be used by any group, not just student group, and made sure that the results of the predictions are understandable by anyone who does not have any statistical knowledge.
+
+## Theory
+
+H1: There is no dependency for the type of employer and salary.
+
+## Data
+
+The dataset has been obtained from the UCI machine learning site(https://archive.ics.uci.edu/ml/machine-learning-databases/adult/). 
+
+```{r echo=FALSE}
+sal_emp <- read.csv("C:/Users/Srikanth/Downloads/adult_data.csv", sep = ",")
+head(sal_emp)
+```
+Get structure of the data. 
+```{r}
+str(sal_emp)
+```
+Get summary of the dataset. 
+```{r}
+summary(sal_emp)
+```
+Check for any missing values in the data.
+```{r}
+sapply(sal_emp,function(x) sum(is.na(x)))
+```
+The data is clean and there are no missing values in the data. 
+
+## Methodology
+Since the data is clean, the next thing is perform analysis and visualization. 
+First, we perform analysis on the distribution of salary in terms of gender. 
+```{r}
+ggplot(sal_emp, aes(sex)) + geom_bar(aes(fill= income), alpha=0.5)
+```
+
+An analysis of the distribution salary for the type of employer and gender. This is done by creating a stacked barchart. 
+
+
+
+
+```{r}
+ggplot(sal_emp, aes(factor(type_employer))) + geom_bar(aes(fill=income)) + facet_grid(.~ sex) + theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=0.2)) 
+```
+
+Next, we perform analysis on the distribution of salary for different types of employees. 
+
+```{r}
+table(sal_emp$type_employer)
+```
+```{r}
+sal_emp$type_employer <- as.character(sal_emp$type_employer)
+str(sal_emp)
+unemp <- function(job) {
+  job <- as.character(job)
+  if (job =='Never-worked'| job=='Without-pay') {
+    return("unemployed")
+  } else {
+    return(job)
+  }
+}
+```
+```{r}
+sal_emp$type_employer <- sapply(sal_emp$type_employer, unemp)
+table(sal_emp$type_employer)
+```
+Next we split the data to train set(80%) and test set(20%) for creating the model. 
+```{r}
+# Set a random seed
+set.seed(101) 
+# SplitRatio = percent of sample==TRUE
+sample <- sample.split(sal_emp$income, SplitRatio = 0.80) 
+# Training Data
+train = subset(sal_emp, sample == TRUE)
+# Testing Data
+test = subset(sal_emp, sample == FALSE)
+```
+Build the logistic regression model. 
+```{r}
+train$income <- as.factor(train$income)
+Train_Model <- glm(income ~., family = binomial(logit), data =train)
+summary(Train_Model)
+```
+## Results
+
+ From the analysis on the distribution of salary in terms of gender, there are more males than Females.In addition, more males earn less than 50k than those that earn above 50k. This is same for females. There are more females who earn less than 50k compared to those who earn above 50k.  
+```{r echo=FALSE}
+ggplot(sal_emp, aes(sex)) + geom_bar(aes(fill= income), alpha=0.5)
+```
+
+The analysis on distribution salary for the type of employer and gender clearly shows that for private employer, they have the highest number of employees both for females and males. There are very few females in the self employment income. Federal-gov has the least males in employment. 
+
+```{r echo=FALSE}
+ggplot(sal_emp, aes(factor(type_employer))) + geom_bar(aes(fill=income)) + facet_grid(.~ sex) + theme(text = element_text(size=12),axis.text.x = element_text(angle=90, vjust=0.2)) 
+```
+```{r echo=FALSE}
+test$predicted_income <- predict(Train_Model, newdata = test, type="response")
+```
+The model has an accuracy of 84%, which means it is pretty good to accurately predict the data. 
+```{r}
+print("The accuracy of the model")
+(6392+1414)/(528+881+1414+6392)
+```
+## Implications
+
+This project only applied the logistic regression model for the salary prediction. However, there needs to have more analysis and evaluation of the performance of other predictive models like Random Forest, Decision Tree, Support Vector Machines to ensure that the best and most suitable model in terms of accuracy and efficiency is used for salary prediction.
+
+
+## Conclusion
+
+A logistic regression model has been created in this project to provide salary predictions. The theory that there is no dependency between type of employer and salary is not true. It is clear that for private employers they have the highest number of employees who earn both less than 50k and above 50k. 
+
+# References
+
+Bhuller, M., Mogstad, M., & Salvanes, K. G. (2017). Life-cycle earnings, education premiums, and internal rates of return. Journal of Labor Economics, 35(4), 993-1030.
+
+
+Pawha, A., & Kamthania, D. (2019). Quantitative analysis of historical data for prediction of job salary in India-A case study. Journal of Statistics and Management Systems, 22(2), 187-198.
+
+Shwartz, M., Burgess Jr, J. F., & Zhu, J. (2016). A DEA based composite measure of quality and its associated data uncertainty interval for health care provider profiling and pay-for-performance. European Journal of Operational Research, 253(2), 489-502.
+
+Dataset: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/
